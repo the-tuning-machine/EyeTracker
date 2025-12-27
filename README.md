@@ -26,7 +26,7 @@ Ce projet est basé sur la bibliothèque [GazeFollower](https://github.com/Ganch
 ### 2. Cloner le projet
 
 ```bash
-git clone <URL_DU_PROJET> EyeTracker
+git clone git@github.com:the-tuning-machine/EyeTracker.git
 cd EyeTracker
 ```
 
