@@ -1,149 +1,127 @@
-<div align="center">
-  <a href="https://github.com/GanchengZhu/GazeFollower">
-    <img width="160" height="160" src="https://raw.githubusercontent.com/GanchengZhu/GazeFollower/main/gazefollower/res/image/gazefollower.png">
-  </a>
+# EyeTracker
 
-  <h1>GazeFollower</h1>
+**Système d'eye-tracking pour l'enregistrement de sessions longues avec webcam**
 
-<b>An open-source gaze tracking system for web cameras</b><br/>
-<i>Simple, Fast, Pythonic, Accurate</i><br/>
+Ce projet est basé sur la bibliothèque [GazeFollower](https://github.com/GanchengZhu/GazeFollower), un système d'eye-tracking open-source utilisant des réseaux de neurones profonds pour le suivi du regard via webcam.
 
-<p>
-    <img src="https://img.shields.io/github/languages/top/ganchengzhu/gazefollower" alt="Top language">
-    <img src="https://img.shields.io/badge/python-3.11-blue" alt="Python 3.11">
-    <img src="https://img.shields.io/codacy/grade/e21ccd9e469d4b9abd69efeaaa587cc2" alt="Code quality">
-</p>
-</div>
+## 📋 Prérequis
 
-## Introduction
+- **Python 3.10.4** (testé et recommandé)
+- **Webcam** fonctionnelle
+- **Système d'exploitation:** Windows (les utilisateurs Linux sauront adapter les commandes)
 
-**GazeFollower** is a powerful and easy-to-use gaze tracking system designed specifically for use with web cameras. It
-offers an intuitive Python API, allowing developers and researchers to integrate gaze tracking into their projects with
-minimal setup. GazeFollower provides tools for real-time gaze tracking, calibration, and data recording, making it ideal
-for applications in psychology, usability testing, and more.
+---
 
-## Features
+## 🚀 Installation (Windows)
 
-- **Accurate Tracking**: Achieves high accuracy and precision with built-in calibration methods.
-- **Pythonic API**: Easy-to-use, with functions for common tasks like calibration and data saving.
-- **Lightweight & Fast**: Optimized for real-time performance, ensuring smooth operation on most systems.
-- **Experiment Ready**: Includes methods for triggering and saving data, ideal for experiment-based applications.
+### 1. Installer Python 3.10.4
 
-## Installation
+1. Télécharger Python 3.10.4 depuis : https://www.python.org/downloads/windows/
+2. **Important:** Cocher "Add Python to PATH" durant l'installation
+3. Vérifier l'installation :
+   ```bash
+   python --version
+   ```
 
-You can install GazeFollower via pip or by cloning the repository.
-
-### Installing with pip
+### 2. Cloner le projet
 
 ```bash
-python -m pip install gazefollower
+git clone <URL_DU_PROJET> EyeTracker
+cd EyeTracker
 ```
 
-### Git clone from Github
+### 3. Créer l'environnement virtuel
 
 ```bash
-git clone https://github.com/GanchengZhu/GazeFollower
-cd GazeFollower
-python setup.py install
+py -3.10 -m venv .venv
 ```
 
-## Quick Start
+### 4. Activer l'environnement virtuel
 
-Here's a basic example of how to use GazeFollower:
-
-```python
-# _*_ coding: utf-8 _*_
-
-import pygame
-from gazefollower import GazeFollower
-
-gaze_follower = GazeFollower()
-
-gaze_follower.preview()
-gaze_follower.calibrate()
-
-gaze_follower.start_sampling()
-# your experiment code here
-gaze_follower.send_trigger(10)
-pygame.time.wait(5)
-# your experiment code here
-gaze_follower.stop_sampling()
-gaze_follower.save_data("demo.csv")
-gaze_follower.release()
+```bash
+.\.venv\Scripts\activate
 ```
 
-More detailed usage information can be found [here](MORE_INFO.md).
+### 5. Installer les dépendances
 
-## Note
-
-This depository contains a model train on 7 million images that is sufficient for most applications. 
-
-To gain access to the base model trained on 32 million images, please email zhiguo@zju.edu.cn.
-
-### Email Prompt
-
-Here’s a template for your request email. Please keep the subject line unchanged:
-
-```
-Subject: Request for Access to the Base Model Trained on 32 Million Images
-
-Dear Prof. Zhiguo Wang,
-
-I hope this message finds you well.
-
-My name is [Your Name], and I am a [student/researcher] at [Your Affiliation]. I am writing to request access to the base model trained on 32 million images.
-
-I assure you that I will use this model solely for academic and research purposes and will not utilize it for commercial activities or share it with others.
-
-Thank you for considering my request. I look forward to receiving access to the model.
-
-Best regards,
-[Your Name]
+```bash
+pip install MNN numpy opencv-python pandas pygame screeninfo
+pip install mediapipe==0.10.9
 ```
 
-### The Usage of The Base Model Trained on 32 Million Images
+---
 
-```python
-import pygame
-from gazefollower import GazeFollower
-from gazefollower.gaze_estimator import MGazeNetGazeEstimator
+## ▶️ Utilisation
 
-# The base model path need to pass here
-gaze_follower = GazeFollower(gaze_estimator=MGazeNetGazeEstimator(model_path='path to model'))
+### Lancer l'application
 
-gaze_follower.preview()
-gaze_follower.calibrate()
+```bash
+# Activer l'environnement virtuel (si pas déjà fait)
+.\.venv\Scripts\activate
 
-gaze_follower.start_sampling()
-# your experiment code
-gaze_follower.send_trigger(10)
-pygame.time.wait(5)
-# your experiment code
-gaze_follower.stop_sampling()
-
-gaze_follower.save_data("demo.csv")
-gaze_follower.release()
+# Lancer l'eye tracker
+python eye_tracker.py
 ```
 
-## How to fine-tune
+### Workflow de l'application
 
-Please send an email to `zhiguo@zju.edu.cn` to access data collection, data preprocessing, and fine-tuning code
+1. **Calibration automatique** au lancement
+2. **Enregistrement** avec suivi du regard en temps réel
+3. **Sauvegarde automatique** à l'arrêt :
+   - Fichier CSV avec les données de tracking
+   - Images périodiques (1 toutes les 2 secondes)
+   - Statistiques de session dans la console
 
-## License Information
+### Structure des données sauvegardées
 
-This project is licensed under
-the [Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0)](https://creativecommons.org/licenses/by-nc-sa/4.0/).
-Please see LICENSE file.
+```
+nom_session/
+├── nom_session.csv          # Données de tracking (timestamp, position regard, etc.)
+└── images/                   # Captures d'écran périodiques
+    ├── 0001.jpg
+    ├── 0002.jpg
+    └── ...
+```
 
-### Disclaimer
+---
 
-The work is provided "as-is" without any warranties, express or implied, including but not limited to the warranties of
-merchantability, fitness for a particular purpose, or non-infringement.
+## 📊 Données enregistrées
 
+Le fichier CSV contient pour chaque échantillon :
+- **timestamp** : Horodatage
+- **gaze_x, gaze_y** : Position du regard à l'écran
+- **status** : État du tracking (actif/perdu)
+- **looking_at_screen** : Indique si l'utilisateur regarde l'écran
+- **tracking_lost** : Marqueur de perte de tracking
 
-### Citations
+Les images sont sauvegardées toutes les 2 secondes pour une référence visuelle.
 
-```BibTeX
+---
+
+## 🎯 Caractéristiques
+
+- ✅ **Calibration automatique** avec score de qualité
+- ✅ **Enregistrement longue durée** (testé sur 2h+)
+- ✅ **Capture continue** même en cas de perte de tracking
+- ✅ **Sauvegarde automatique** des données et images
+- ✅ **Interface moderne** avec affichage temps réel
+- ✅ **Statistiques détaillées** en fin de session
+
+---
+
+## 📝 Notes
+
+- **Sessions longues :** Le système est optimisé pour des sessions de 1 à 2 heures
+- **Fréquence d'images :** 1 image toutes les 2 secondes (~1800 images/heure)
+- **Format d'images :** JPEG avec qualité 85% pour optimiser l'espace disque
+
+---
+
+## 🔗 Crédits
+
+Ce projet utilise **GazeFollower** développé par Gancheng Zhu et son équipe :
+
+```bibtex
 @article{zhu2025gazefollower,
   title={GazeFollower: An open-source system for deep learning-based gaze tracking with web cameras},
   author={Zhu, Gancheng and Duan, Xiaoting and Huang, Zehao and Wang, Rong and Zhang, Shuai and Wang, Zhiguo},
@@ -156,35 +134,13 @@ merchantability, fitness for a particular purpose, or non-infringement.
 }
 ```
 
-```BibTeX
-@article{zhu2024neural,
-  title={Neural Networks With Linear Adaptive Batch Normalization and Swarm Intelligence Calibration for Real-Time Gaze Estimation on Smartphones},
-  author={Zhu, Gancheng and Li, Yongkai and Zhang, Shuai and Duan, Xiaoting and Huang, Zehao and Yao, Zhaomin and Wang, Rong and Wang, Zhiguo},
-  journal={International Journal of Intelligent Systems},
-  volume={2024},
-  number={1},
-  pages={2644725},
-  year={2024},
-  publisher={Wiley Online Library}
-}
-```
+**Dépôt original :** https://github.com/GanchengZhu/GazeFollower
 
-```BibTeX
-@article{zhu2025smartphone,
-  title={Smartphone eye-tracking with deep learning: Data quality and field testing},
-  author={Zhu, Gancheng and Huang, Zehao and Duan, Xiaoting and Zhang, Shuai and Wang, Rong and Li, Yongkai and Wang, Zhiguo},
-  journal={Behavior Research Methods},
-  volume={57},
-  number={7},
-  pages={1--19},
-  year={2025},
-  publisher={Springer}
-}
-```
+---
 
-# NEED TO IMPLEMENTATION
+## 📄 Licence
 
-- Blink Detection
-- Event Detection
-- Calibration Optimization
-- Reduce Jitter
+Ce projet hérite de la licence de GazeFollower :
+[Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
+
+⚠️ **Usage non-commercial uniquement**
