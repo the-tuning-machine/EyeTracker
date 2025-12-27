@@ -59,14 +59,32 @@ class CalibrationUI(BaseUI):
             self.backend.after_draw()
 
         self.running = True
-        if cali_controller.cali_available:
-            text = "Calibration succeed."
+
+        # Récupérer le score de calibration
+        calibration_score = cali_controller.mean_euclidean_error if cali_controller.mean_euclidean_error else 0
+
+        # Déterminer la qualité (plus le score est BAS, plus c'est MAUVAIS)
+        if calibration_score < 0.05:
+            quality = "EXCELLENT"
+            quality_color = (0, 200, 0)  # Vert
+        elif calibration_score < 0.10:
+            quality = "BONNE"
+            quality_color = (59, 130, 246)  # Bleu
+        elif calibration_score < 0.20:
+            quality = "MOYENNE"
+            quality_color = (251, 146, 60)  # Orange
         else:
-            text = "Calibration failed."
+            quality = "FAIBLE"
+            quality_color = (239, 68, 68)  # Rouge
+
+        if cali_controller.cali_available:
+            text = f"Calibration réussie !\n\nScore: {calibration_score:.3f} - Qualité: {quality}"
+        else:
+            text = "Calibration échouée."
 
         uni_p, avg_labels, avg_predictions = [], [], []
         if cali_controller.predictions is not None:
-            text += "\nRed dot: ground truth point, Green dot: predicted point"
+            text += "\n\nPoint rouge: cible | Point vert: prédiction"
             ids = np.array(cali_controller.feature_ids)
             n_point, n_frame, ids_dim = ids.shape
             point_ids = ids.reshape(-1)
@@ -92,7 +110,7 @@ class CalibrationUI(BaseUI):
                 avg_labels[idx] = cali_controller.convert_to_pixel(avg_label)
                 avg_predictions[idx] = cali_controller.convert_to_pixel(avg_pred)
 
-        text += "\nPress `Space` to continue OR `R` to recalibration"
+        text += "\n\n\nAppuyez sur ESPACE pour CONTINUER  |  R pour RECALIBRER"
         while self.running:
             key = self.backend.listen_keys(key=('space', 'r'))
             if key == 'space':
@@ -100,8 +118,9 @@ class CalibrationUI(BaseUI):
             elif key == 'r':
                 return False
             self.backend.before_draw()
+            # Utiliser une taille de police plus grande pour le texte principal
             self.backend.draw_text_in_bottom_right_corner(
-                text, self.font_name, self.row_font_size,
+                text, self.font_name, self.font_size,  # font_size au lieu de row_font_size
                 text_color=self._color_black)
 
             if cali_controller.predictions is not None:

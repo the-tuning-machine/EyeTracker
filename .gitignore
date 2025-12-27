@@ -15,6 +15,7 @@ test4.py
 test5.py
 test6.py
 .idea
+.venv
 __pycache__
 gazefollower/__pycache__
 gazefollower/calibration/__pycache__
