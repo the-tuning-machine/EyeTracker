@@ -37,10 +37,7 @@ class WebCamCamera(Camera):
         self.img_width = img_width
         self.cam_fps = cam_fps
         self._cap = cv2.VideoCapture()
-        # Set the camera resolution and frame rate.
-        self._cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.img_width)
-        self._cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.img_height)
-        self._cap.set(cv2.CAP_PROP_FPS, self.cam_fps)
+        # La résolution et le FPS seront configurés lors de l'ouverture dans open()
 
     def _create_capture_thread(self):
         """
@@ -87,9 +84,16 @@ class WebCamCamera(Camera):
         Opens the webcam if it is not already opened.
         """
         Log.i("WebCam opened")
-        if not self._cap.open(self.webcam_id):
+        # Utiliser DirectShow (CAP_DSHOW) sur Windows pour de meilleures performances
+        if not self._cap.open(self.webcam_id, cv2.CAP_DSHOW):
             Log.e("Failed to open webcam camera")
             raise Exception("Failed to open webcam camera")
+
+        # Configurer la résolution et le FPS après l'ouverture
+        self._cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.img_width)
+        self._cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.img_height)
+        self._cap.set(cv2.CAP_PROP_FPS, self.cam_fps)
+
         self._create_capture_thread()
 
     def close(self):

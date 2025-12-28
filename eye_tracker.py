@@ -1,14 +1,63 @@
 import pygame
 import sys
 from gazefollower import GazeFollower
+from gazefollower.camera import WebCamCamera
 from enum import Enum
 import time
 import csv
 import cv2
 import numpy as np
-from PIL import Image
 import os
 from datetime import datetime
+
+
+def detect_usb_camera():
+    """
+    Détecte les caméras disponibles et retourne l'ID de la webcam USB en priorité.
+    Si aucune webcam USB n'est trouvée, retourne la caméra native (ID 0).
+
+    Returns:
+        int: L'ID de la caméra à utiliser
+    """
+    print("\n🔍 Détection rapide des caméras...")
+
+    # Stratégie optimisée : tester les IDs les plus probables en premier
+    # ID 0 = caméra native, ID 1-2 = webcams USB les plus courantes
+    priority_ids = [1, 0, 2, 3]  # Ordre de priorité
+
+    for camera_id in priority_ids:
+        # Utiliser DirectShow (CAP_DSHOW) sur Windows
+        cap = cv2.VideoCapture(camera_id, cv2.CAP_DSHOW)
+
+        if cap.isOpened():
+            # Test rapide : une seule frame suffit
+            ret, frame = cap.read()
+
+            if ret and frame is not None:
+                cap.release()
+
+                # Si c'est une webcam USB (ID > 0), on la prend immédiatement
+                if camera_id > 0:
+                    print(f"  ✓ Webcam USB détectée (ID {camera_id})")
+                    return camera_id
+                else:
+                    # On continue de chercher une USB, mais on garde ID 0 en backup
+                    print(f"  ✓ Caméra native détectée (ID {camera_id})")
+                    native_camera = camera_id
+            else:
+                cap.release()
+        else:
+            # Si cap.isOpened() échoue, on passe au suivant
+            if cap is not None:
+                cap.release()
+
+    # Si on arrive ici, on n'a trouvé que la caméra native ou rien
+    if 'native_camera' in locals():
+        print(f"  → Utilisation de la caméra native (ID {native_camera})")
+        return native_camera
+    else:
+        print("  ⚠️ Aucune caméra détectée, utilisation de l'ID 0 par défaut")
+        return 0
 
 
 class AppState(Enum):
@@ -22,8 +71,12 @@ class EyeTrackerApp:
     def __init__(self):
         pygame.init()
 
-        # Initialisation de GazeFollower
-        self.gaze_follower = GazeFollower()
+        # Détecter la meilleure caméra (USB en priorité)
+        camera_id = detect_usb_camera()
+
+        # Initialisation de GazeFollower avec la caméra détectée
+        camera = WebCamCamera(webcam_id=camera_id)
+        self.gaze_follower = GazeFollower(camera=camera)
 
         # Configuration de l'écran en plein écran
         screen_size = self.gaze_follower.screen_size.tolist()
@@ -368,22 +421,13 @@ class EyeTrackerApp:
         display_height = 240
 
         try:
-            # Redimensionner
-            frame_resized = cv2.resize(self.current_frame, (display_width, display_height))
-
-            # Flip horizontal pour effet miroir
+            # Redimensionner et flip en une seule opération pour optimiser
+            frame_resized = cv2.resize(self.current_frame, (display_width, display_height), interpolation=cv2.INTER_LINEAR)
             frame_flipped = cv2.flip(frame_resized, 1)
 
-            # UTILISER LA VERSION BRUT (sans conversion de couleur)
-            # GazeFollower donne déjà les frames dans le bon format
-            pil_image = Image.fromarray(frame_flipped)
-
-            # Convertir PIL vers pygame
-            mode = pil_image.mode
-            size = pil_image.size
-            data = pil_image.tobytes()
-
-            frame_surface = pygame.image.fromstring(data, size, mode)
+            # Conversion directe OpenCV (RGB numpy array) vers pygame - BEAUCOUP plus rapide que PIL
+            # GazeFollower fournit déjà les frames en RGB
+            frame_surface = pygame.surfarray.make_surface(np.transpose(frame_flipped, (1, 0, 2)))
 
             x_pos = self.screen_width - display_width - 30
             y_pos = 150
@@ -657,6 +701,10 @@ class EyeTrackerApp:
         print(f"\n📊 Calcul des statistiques...")
         self.calculate_statistics()
 
+        # Sauvegarder les statistiques dans un fichier .txt
+        print(f"\n💾 Sauvegarde des statistiques...")
+        self.save_statistics_to_file()
+
         # FERMETURE FORCÉE IMMÉDIATE - Sans passer par la boucle principale
         print("\n👋 Fermeture FORCÉE de l'application...")
         print("=" * 60)
@@ -759,6 +807,64 @@ class EyeTrackerApp:
         print(f"Temps tracking perdu: {time_tracking_lost:.2f}s ({self.statistics['percentage_lost']:.1f}%)")
         print(f"Échantillons: {self.statistics['screen_samples']} écran / {self.statistics['lost_samples']} perdus / {self.statistics['total_samples']} total")
         print("===================\n")
+
+    def save_statistics_to_file(self):
+        """Sauvegarde les statistiques dans un fichier .txt"""
+        if not hasattr(self, 'statistics') or not self.session_dir:
+            print("⚠️ Aucune statistique à sauvegarder")
+            return
+
+        stats_filename = f"{self.session_name}_stats.txt"
+        stats_path = os.path.join(self.session_dir, stats_filename)
+
+        try:
+            with open(stats_path, 'w', encoding='utf-8') as f:
+                f.write("=" * 60 + "\n")
+                f.write(f"STATISTIQUES DE LA SESSION: {self.session_name}\n")
+                f.write("=" * 60 + "\n\n")
+
+                # Informations générales
+                f.write(f"Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+                f.write(f"Durée totale: {self.statistics['total_duration']:.2f} secondes\n\n")
+
+                # Temps passé à regarder l'écran
+                f.write("--- TEMPS DE REGARD ---\n")
+                f.write(f"Temps passé à regarder l'écran: {self.statistics['time_looking_at_screen']:.2f} secondes\n")
+                f.write(f"Pourcentage: {self.statistics['percentage_looking']:.1f}%\n\n")
+
+                # Temps passé à ne pas regarder l'écran (tracking perdu)
+                f.write("--- TEMPS SANS REGARD SUR L'ÉCRAN ---\n")
+                f.write(f"Temps tracking perdu: {self.statistics['time_tracking_lost']:.2f} secondes\n")
+                f.write(f"Pourcentage: {self.statistics['percentage_lost']:.1f}%\n\n")
+
+                # Détails des échantillons
+                f.write("--- DÉTAILS DES ÉCHANTILLONS ---\n")
+                f.write(f"Total d'échantillons: {self.statistics['total_samples']}\n")
+                f.write(f"Échantillons valides: {self.statistics['valid_samples']}\n")
+                f.write(f"Échantillons regardant l'écran: {self.statistics['screen_samples']}\n")
+                f.write(f"Échantillons avec tracking perdu: {self.statistics['lost_samples']}\n\n")
+
+                # Score de calibration
+                if self.calibration_score is not None:
+                    f.write("--- QUALITÉ DE CALIBRATION ---\n")
+                    f.write(f"Score: {self.calibration_score:.3f}\n")
+
+                    # Qualité
+                    if self.calibration_score < 0.05:
+                        quality = "EXCELLENT"
+                    elif self.calibration_score < 0.10:
+                        quality = "BONNE"
+                    elif self.calibration_score < 0.20:
+                        quality = "MOYENNE"
+                    else:
+                        quality = "FAIBLE"
+                    f.write(f"Qualité: {quality}\n\n")
+
+                f.write("=" * 60 + "\n")
+
+            print(f"✓ Statistiques sauvegardées: {stats_path}")
+        except Exception as e:
+            print(f"❌ Erreur lors de la sauvegarde des statistiques: {e}")
 
     def show_statistics(self):
         """Affiche les statistiques sur l'écran"""

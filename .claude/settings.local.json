@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -m py_compile:*)",
+      "Bash(python:*)",
+      "Bash(.venvScriptspython.exe test_camera_detection.py)",
+      "Bash(\".venv/Scripts/python.exe\" test_camera_detection.py)"
+    ]
+  }
+}
