@@ -1,0 +1,26 @@
+============================================================
+STATISTIQUES DE LA SESSION: Louis PARMENTIER - Jurassic Park 2
+============================================================
+
+Date: 2025-12-30 16:13:36
+Durée totale: 82.98 secondes
+
+--- TEMPS DE REGARD ---
+Temps passé à regarder l'écran: 82.77 secondes
+Pourcentage: 99.8%
+
+--- TEMPS SANS REGARD SUR L'ÉCRAN ---
+Temps tracking perdu: 0.21 secondes
+Pourcentage: 0.2%
+
+--- DÉTAILS DES ÉCHANTILLONS ---
+Total d'échantillons: 1201
+Échantillons valides: 1198
+Échantillons regardant l'écran: 1198
+Échantillons avec tracking perdu: 3
+
+--- QUALITÉ DE CALIBRATION ---
+Score: 0.053
+Qualité: BONNE
+
+============================================================

@@ -477,6 +477,35 @@ class PyGameUIBackend(UIBackend):
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
                     host.running = False
+                elif event.key == pygame.K_F12:
+                    # Capture d'écran avec F12
+                    self._take_screenshot()
+                elif event.key == pygame.K_PRINT or event.key == pygame.K_SYSREQ:
+                    # Ignorer Print Screen pour éviter de quitter
+                    print("💡 Utilisez F12 pour prendre une capture d'écran")
+                    pass
+
+    def _take_screenshot(self):
+        """Prend une capture d'écran de l'écran de calibration"""
+        try:
+            import os
+            from datetime import datetime
+
+            # Créer le dossier screenshots s'il n'existe pas
+            screenshots_dir = os.path.join(os.getcwd(), "screenshots")
+            os.makedirs(screenshots_dir, exist_ok=True)
+
+            # Générer un nom de fichier avec timestamp
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"screenshot_calibration_{timestamp}.png"
+            filepath = os.path.join(screenshots_dir, filename)
+
+            # Sauvegarder la surface pygame actuelle
+            pygame.image.save(self.win, filepath)
+
+            print(f"📸 Capture d'écran sauvegardée : {filepath}")
+        except Exception as e:
+            print(f"❌ Erreur lors de la capture d'écran : {e}")
 
     def listen_keys(self, key: Tuple):
         """
@@ -493,6 +522,14 @@ class PyGameUIBackend(UIBackend):
                 pygame.quit()
                 raise SystemExit
             if event.type == pygame.KEYDOWN:
+                # Gestion des touches spéciales avant tout
+                if event.key == pygame.K_F12:
+                    self._take_screenshot()
+                    continue
+                elif event.key == pygame.K_PRINT or event.key == pygame.K_SYSREQ:
+                    print("💡 Utilisez F12 pour prendre une capture d'écran")
+                    continue
+
                 key_name = pygame.key.name(event.key)
                 if key_name in key:
                     return key_name

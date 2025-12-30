@@ -10,6 +10,34 @@ import numpy as np
 import os
 from datetime import datetime
 
+# Sauvegarder la fonction originale pygame.event.get
+_original_pygame_event_get = pygame.event.get
+_screenshot_callback = None
+
+def _patched_pygame_event_get():
+    """Wrapper global pour intercepter F12 et Print Screen partout"""
+    events = _original_pygame_event_get()
+    filtered_events = []
+
+    for event in events:
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_F12:
+                # Capture d'écran avec F12
+                if _screenshot_callback:
+                    _screenshot_callback()
+                continue  # Ne pas passer l'événement
+            elif event.key == pygame.K_PRINT or event.key == pygame.K_SYSREQ:
+                # Ignorer Print Screen
+                print("💡 Utilisez F12 pour prendre une capture d'écran")
+                continue  # Ne pas passer l'événement
+
+        filtered_events.append(event)
+
+    return filtered_events
+
+# Remplacer pygame.event.get par notre version
+pygame.event.get = _patched_pygame_event_get
+
 
 def detect_usb_camera():
     """
@@ -82,6 +110,10 @@ class EyeTrackerApp:
         screen_size = self.gaze_follower.screen_size.tolist()
         self.screen = pygame.display.set_mode(screen_size, pygame.FULLSCREEN)
         pygame.display.set_caption("Eye Tracker - Projet OraDys 3TT\nUniversité Paris 8 - Laboratoire Paragraphe")
+
+        # Configurer le callback global de capture d'écran
+        global _screenshot_callback
+        _screenshot_callback = self.take_screenshot
 
         # État de l'application
         self.state = AppState.IDLE
@@ -939,6 +971,59 @@ class EyeTrackerApp:
         pygame.quit()
         sys.exit()
 
+    def take_screenshot(self):
+        """Prend une capture d'écran de l'interface et la sauvegarde"""
+        try:
+            # Créer le dossier screenshots s'il n'existe pas
+            screenshots_dir = os.path.join(os.getcwd(), "screenshots")
+            os.makedirs(screenshots_dir, exist_ok=True)
+
+            # Générer un nom de fichier avec timestamp
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"screenshot_{timestamp}.png"
+            filepath = os.path.join(screenshots_dir, filename)
+
+            # Sauvegarder la surface pygame actuelle
+            pygame.image.save(self.screen, filepath)
+
+            print(f"📸 Capture d'écran sauvegardée : {filepath}")
+
+            # Afficher une notification visuelle temporaire
+            self.show_screenshot_notification()
+
+        except Exception as e:
+            print(f"❌ Erreur lors de la capture d'écran : {e}")
+
+    def show_screenshot_notification(self):
+        """Affiche brièvement une notification de capture d'écran"""
+        # Créer une surface semi-transparente pour la notification
+        notification_width = 400
+        notification_height = 60
+        notification_x = self.screen_width // 2 - notification_width // 2
+        notification_y = 50
+
+        # Sauvegarder la surface actuelle
+        temp_surface = self.screen.copy()
+
+        # Dessiner la notification
+        notif_rect = pygame.Rect(notification_x, notification_y, notification_width, notification_height)
+        self.draw_rounded_rect(self.screen, self.ACCENT_SUCCESS, notif_rect, 10)
+        pygame.draw.rect(self.screen, self.TEXT_PRIMARY, notif_rect, 3, border_radius=10)
+
+        notif_text = "✓ Capture d'écran sauvegardée !"
+        text_surf = self.font_medium.render(notif_text, True, self.TEXT_PRIMARY)
+        text_rect = text_surf.get_rect(center=notif_rect.center)
+        self.screen.blit(text_surf, text_rect)
+
+        pygame.display.flip()
+
+        # Attendre un peu
+        pygame.time.wait(800)
+
+        # Restaurer l'écran
+        self.screen.blit(temp_surface, (0, 0))
+        pygame.display.flip()
+
     def run(self):
         """Boucle principale de l'application"""
         clock = pygame.time.Clock()
@@ -963,6 +1048,7 @@ class EyeTrackerApp:
                         else:
                             # Confirmation avant de quitter en cours d'enregistrement
                             print("Appuyez sur ESCAPE à nouveau pour quitter")
+                    # F12 et Print Screen sont gérés globalement par le wrapper pygame.event.get
 
             self.draw_ui()
             clock.tick(30)
